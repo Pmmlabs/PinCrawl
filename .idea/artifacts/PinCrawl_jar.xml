@@ -3,7 +3,6 @@
     <output-path>$PROJECT_DIR$/out/artifacts/PinCrawl_jar</output-path>
     <root id="archive" name="PinCrawl.jar">
       <element id="module-output" name="PinCrawl" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/../jsoup-1.8.2.jar" path-in-jar="/" />
     </root>
   </artifact>
 </component>

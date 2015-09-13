@@ -1,0 +1,3 @@
+[submodule "PinCrawl/lib/jsoup"]
+	path = PinCrawl/lib/jsoup
+	url = git@github.com:jhy/jsoup.git
