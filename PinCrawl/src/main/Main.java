@@ -72,6 +72,7 @@ public class Main {
                     .data("data", "{\"options\":{\"username\":\"" + _username + "\",\"page_size\":250},\"module\":{\"name\":\"UserProfileContent\",\"options\":{\"tab\":\"boards\"}}}")
                     .header("X-Requested-With", "XMLHttpRequest")
                     .ignoreContentType(true)
+                    .maxBodySize(0)
                     .timeout(TIMEOUT).get();
         } catch (HttpStatusException e) {
             System.out.println("ERROR: not a valid user name, aborting.");
@@ -104,7 +105,7 @@ public class Main {
                 System.out.println("ERROR: couldn't find name of board, it's the developer's fault. Aborting.");
                 return;
             }
-            boardName = URLEncoder.encode(boardName, "UTF-8");
+            //boardName = URLEncoder.encode(boardName, "UTF-8");
             boardName = boardName.replace('+',' ');
             // plus extra length safety now
             if(boardName.length() > 256) {
@@ -124,11 +125,12 @@ public class Main {
                     .data("data", "{\"options\":{\"board_id\":\""+boardObj.getString("id")+"\",\"page_size\":250}}")
                     .header("X-Requested-With", "XMLHttpRequest")
                     .ignoreContentType(true)
+                    .maxBodySize(0)
                     .timeout(TIMEOUT).get();
 
             boardDoc.select("a").remove();
             JSONObject obj = new JSONObject(boardDoc.body().html().replaceAll("\n",""));
-            JSONArray arr = obj.getJSONObject("resource_response").getJSONArray("data"); //.length(); //getString("pageName");
+            JSONArray arr = obj.getJSONObject("resource_response").getJSONArray("data");
 
             for (int i = 0; i < arr.length(); i++) {
                 saveImage(arr.getJSONObject(i).getJSONObject("images").getJSONObject("orig").getString("url"), rootDir + "\\" + boardName, i);
