@@ -105,35 +105,30 @@ public class Main {
                 System.out.println("ERROR: couldn't find name of board, it's the developer's fault. Aborting.");
                 return;
             }
-            //boardName = URLEncoder.encode(boardName, "UTF-8");
             boardName = boardName.replace('+',' ');
-            // plus extra length safety now
-            if(boardName.length() > 256) {
-                boardName = boardName.substring(0, 256);
-            }
             // old, got title and description
-            //String boardName = boardLink.attr("title");
-            //boardName = boardName.substring(10, boardName.length()); // remove "more from" part
-            //boardName = URLEncoder.encode(boardName, "UTF-8");
-            //boardName = boardName.replace('+',' ');
-            if(!makeDir(rootDir + "\\" + boardName))
+            if(!makeDir(rootDir + "\\" + cleanFilename(boardName)))
                 return;
 
             System.out.println("...Downloading '" + boardName + "'...");
             // connect to board via url and get all page urls
-            Document boardDoc = Jsoup.connect("https://www.pinterest.com/resource/BoardFeedResource/get/")
-                    .data("data", "{\"options\":{\"board_id\":\""+boardObj.getString("id")+"\",\"page_size\":250}}")
-                    .header("X-Requested-With", "XMLHttpRequest")
-                    .ignoreContentType(true)
-                    .maxBodySize(0)
-                    .timeout(TIMEOUT).get();
+            JSONArray bookmarks = new JSONArray("[\"\"]");
+            int count = 0;
+            while (!bookmarks.getString(0).equals("-end-")) {
+                Document boardDoc = Jsoup.connect("https://www.pinterest.com/resource/BoardFeedResource/get/")
+                        .data("data", "{\"options\":{\"board_id\":\"" + boardObj.getString("id") + "\",\"page_size\":250,\"bookmarks\":"+bookmarks.toString()+"}}")
+                        .header("X-Requested-With", "XMLHttpRequest")
+                        .ignoreContentType(true)
+                        .maxBodySize(0)
+                        .timeout(TIMEOUT).get();
 
-            boardDoc.select("a").remove();
-            JSONObject obj = new JSONObject(boardDoc.body().html().replaceAll("\n",""));
-            JSONArray arr = obj.getJSONObject("resource_response").getJSONArray("data");
-
-            for (int i = 0; i < arr.length(); i++) {
-                saveImage(arr.getJSONObject(i).getJSONObject("images").getJSONObject("orig").getString("url"), rootDir + "\\" + boardName, i);
+                boardDoc.select("a").remove();
+                JSONObject obj = new JSONObject(boardDoc.body().html().replaceAll("\n", ""));
+                JSONArray arr = obj.getJSONObject("resource_response").getJSONArray("data");
+                bookmarks = obj.getJSONObject("resource").getJSONObject("options").getJSONArray("bookmarks");
+                for (int i = 0; i < arr.length(); i++) {
+                    saveImage(arr.getJSONObject(i).getJSONObject("images").getJSONObject("orig").getString("url"), rootDir + "\\" + boardName, Integer.toString(++count)+"_"+arr.getJSONObject(i).getString("description"));
+                }
             }
         }
 
@@ -162,19 +157,26 @@ public class Main {
         return false;
     }
 
+    private static String cleanFilename(String name) {
+        String tmp = name.replaceAll("[<>\\\\:\"/\\|\\?\\*]", "");
+        if (tmp.length() > 100)
+            tmp = tmp.substring(0, 100);
+        return tmp;
+    }
     /**
      * Saves an image from the specified URL to the path with the name count
-     * TODO: allow gifs, maybe
      *
      * @param srcUrl url of image
      * @param path path to save image (in root\board)
-     * @param count count to name image since I don't want to use the long and tedious names on pinterest
+     * @param filename name of image
      * @throws IOException
      */
-    public static void saveImage(String srcUrl, String path, int count) throws IOException {
+    public static void saveImage(String srcUrl, String path, String filename) throws IOException {
         URL url = new URL(srcUrl);
         ReadableByteChannel rbc = Channels.newChannel(url.openStream());
-        FileOutputStream fos = new FileOutputStream(path + "\\" + count + "." +srcUrl.substring(srcUrl.length()-3));
+        FileOutputStream fos = new FileOutputStream(path + "\\" + cleanFilename(filename) + "." +srcUrl.substring(srcUrl.length()-3));
         fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+        fos.flush();
+        fos.close();
     }
 }
