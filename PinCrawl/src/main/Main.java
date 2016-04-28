@@ -1,21 +1,21 @@
 package main;
 
-import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Scanner;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
-import javax.imageio.ImageIO;
 
 /**
  * A simple app to download any Pinterest user's pins to a local directory.
@@ -47,6 +47,11 @@ public class Main {
             }
         }
 
+        _username = _username.trim();
+        if (_username.contains(" ")) {
+            System.out.println("ERROR: username contains space character");
+            return;
+        }
         try {
             process();
         } catch (IOException e) {
@@ -63,13 +68,21 @@ public class Main {
         // validate username and connect to their page
         Document doc;
         try {
-            doc = Jsoup.connect("https://www.pinterest.com/" + _username + "/").timeout(TIMEOUT).get();
+            doc = Jsoup.connect("https://www.pinterest.com/resource/UserResource/get/")
+                    .data("data", "{\"options\":{\"username\":\"" + _username + "\",\"page_size\":250},\"module\":{\"name\":\"UserProfileContent\",\"options\":{\"tab\":\"boards\"}}}")
+                    .header("X-Requested-With", "XMLHttpRequest")
+                    .ignoreContentType(true)
+                    .timeout(TIMEOUT).get();
         } catch (HttpStatusException e) {
             System.out.println("ERROR: not a valid user name, aborting.");
             return;
         }
-        // list of board urls
-        final Elements boardLinks = doc.select("a[href].boardLinkWrapper");
+        doc.select("a, div").remove();
+        JSONObject userObj = new JSONObject(doc.body().html().replaceAll("\n", ""));
+        JSONArray boardsArr = userObj.getJSONArray("resource_data_cache").getJSONObject(1).getJSONArray("data");
+        // reserve path:
+        /*JSONArray boardsArr2 = userObj.getJSONObject("module").getJSONObject("tree").getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("children");
+        JSONArray boardsArr3 = userObj.getJSONObject("module").getJSONObject("tree").getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("data");*/
 
         // make root directory
         rootDir += " for " + _username;
@@ -79,29 +92,14 @@ public class Main {
             return;
         System.out.println("Downloading all pins to '" + rootDir + "'...");
 
-        for (final Element boardLink : boardLinks) {
-            // connect to board via url and get all page urls
-            final Document boardDoc = Jsoup.connect(boardLink.absUrl("href")).timeout(TIMEOUT).get();
-            final Elements pageLinks = boardDoc.select("a[href].pinImageWrapper");
+        for (Object board : boardsArr) {
+            JSONObject boardObj = (JSONObject)board;
 
             // parse and format board name and make its directory
             // new, get name from Module User boardRepTitle hasText thumb title inside, instead of hover
             // hate having to use all these loops, wasn't getting selector and .attr working properly and give up
             // cause I was tired, so loops it is
-            String boardName = null;
-            for(Element el : boardLink.children()) {
-                if (el.className().equals("boardName hasBoardContext")) {
-                    for (Element el2 : el.children()) {
-                        if (el2.className().equals("Module User boardRepTitle hasText thumb")) {
-                            for (Element el3 : el2.children()) {
-                                if (el3.className().equals("title")) {
-                                    boardName = el3.childNode(0).outerHtml();
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            String boardName = boardObj.getString("name");
             if(boardName == null || boardName.isEmpty()) {
                 System.out.println("ERROR: couldn't find name of board, it's the developer's fault. Aborting.");
                 return;
@@ -121,15 +119,19 @@ public class Main {
                 return;
 
             System.out.println("...Downloading '" + boardName + "'...");
-            int imgCount = 1;
-            for (final Element pageLink : pageLinks) {
-                // connect to image page and get direct link to image then save it
-                final Document pageDoc = Jsoup.connect(pageLink.absUrl("href")).timeout(TIMEOUT).get();
-                final Elements imgLinks = pageDoc.select("img[src].pinImage");
-                for (final Element imgLink : imgLinks) {
-                    saveImage(imgLink.absUrl("src"), rootDir + "\\" + boardName, imgCount);
-                }
-                imgCount++;
+            // connect to board via url and get all page urls
+            Document boardDoc = Jsoup.connect("https://www.pinterest.com/resource/BoardFeedResource/get/")
+                    .data("data", "{\"options\":{\"board_id\":\""+boardObj.getString("id")+"\",\"page_size\":250}}")
+                    .header("X-Requested-With", "XMLHttpRequest")
+                    .ignoreContentType(true)
+                    .timeout(TIMEOUT).get();
+
+            boardDoc.select("a").remove();
+            JSONObject obj = new JSONObject(boardDoc.body().html().replaceAll("\n",""));
+            JSONArray arr = obj.getJSONObject("resource_response").getJSONArray("data"); //.length(); //getString("pageName");
+
+            for (int i = 0; i < arr.length(); i++) {
+                saveImage(arr.getJSONObject(i).getJSONObject("images").getJSONObject("orig").getString("url"), rootDir + "\\" + boardName, i);
             }
         }
 
@@ -168,15 +170,9 @@ public class Main {
      * @throws IOException
      */
     public static void saveImage(String srcUrl, String path, int count) throws IOException {
-        BufferedImage image;
         URL url = new URL(srcUrl);
-        if(srcUrl.endsWith(".gif"))
-            System.out.println("ERROR: .gifs not supported, continuing");
-        try {
-            image = ImageIO.read(url);
-            ImageIO.write(image, "png", new File(path + "\\" + count + ".png"));
-        } catch (ArrayIndexOutOfBoundsException ex) {
-            System.out.println("ERROR: Image too big, probably a .gif that didn't end with .gif, continuing");
-        }
+        ReadableByteChannel rbc = Channels.newChannel(url.openStream());
+        FileOutputStream fos = new FileOutputStream(path + "\\" + count + "." +srcUrl.substring(srcUrl.length()-3));
+        fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
     }
 }
