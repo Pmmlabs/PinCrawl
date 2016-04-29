@@ -91,50 +91,73 @@ public class Main {
         rootDir += " " + sdf;
         if(!makeDir(rootDir))
             return;
-        System.out.println("Downloading all pins to '" + rootDir + "'...");
-
+        System.out.println("Downloading pins to '" + rootDir + "'...");
+        System.out.println("Available albums:");
+        int i=0;
         for (Object board : boardsArr) {
             JSONObject boardObj = (JSONObject)board;
+            System.out.println(Integer.toString(++i)+". "+boardObj.getString("name"));
+        }
+        System.out.println("0. ALL ALBUMS");
+        System.out.print("Enter the number of album: ");
+        Scanner s = new Scanner(System.in);
 
-            // parse and format board name and make its directory
-            // new, get name from Module User boardRepTitle hasText thumb title inside, instead of hover
-            // hate having to use all these loops, wasn't getting selector and .attr working properly and give up
-            // cause I was tired, so loops it is
-            String boardName = boardObj.getString("name");
-            if(boardName == null || boardName.isEmpty()) {
-                System.out.println("ERROR: couldn't find name of board, it's the developer's fault. Aborting.");
-                return;
+        int choise = 0;
+        try {
+            choise = Integer.parseInt(s.next());
+        } catch (Exception e) {
+            System.out.println("Wrong number, using 0: All albums");
+        }
+        if (choise > 0) {
+           downloadAlbum(boardsArr.getJSONObject(choise-1));
+        } else
+            for (Object board : boardsArr) {
+                downloadAlbum((JSONObject) board);
             }
-            boardName = boardName.replace('+',' ');
-            // old, got title and description
-            if(!makeDir(rootDir + "\\" + cleanFilename(boardName)))
-                return;
 
-            System.out.println("...Downloading '" + boardName + "'...");
-            // connect to board via url and get all page urls
-            JSONArray bookmarks = new JSONArray("[\"\"]");
-            int count = 0;
-            while (!bookmarks.getString(0).equals("-end-")) {
-                Document boardDoc = Jsoup.connect("https://www.pinterest.com/resource/BoardFeedResource/get/")
-                        .data("data", "{\"options\":{\"board_id\":\"" + boardObj.getString("id") + "\",\"page_size\":250,\"bookmarks\":"+bookmarks.toString()+"}}")
+        System.out.println("All pins downloaded, to " + System.getProperty("user.dir")
+                + "\\"  + rootDir + "\\");
+        System.out.println("Thanks for using PinCrawl!");
+    }
+
+    private static void downloadAlbum(JSONObject boardObj) {
+        String boardName = boardObj.getString("name");
+        if(boardName == null || boardName.isEmpty()) {
+            System.out.println("ERROR: couldn't find name of board, it's the developer's fault. Aborting.");
+            return;
+        }
+        if(!makeDir(rootDir + "\\" + cleanFilename(boardName)))
+            return;
+
+        System.out.println("Downloading '" + boardName + "'...");
+        // connect to board via url and get all page urls
+        JSONArray bookmarks = new JSONArray("[\"\"]");
+        int count = 0;
+        while (!bookmarks.getString(0).equals("-end-")) {
+            Document boardDoc = null;
+            try {
+                boardDoc = Jsoup.connect("https://www.pinterest.com/resource/BoardFeedResource/get/")
+                        .data("data", "{\"options\":{\"board_id\":\"" + boardObj.getString("id") + "\",\"page_size\":250,\"bookmarks\":" + bookmarks.toString() + "}}")
                         .header("X-Requested-With", "XMLHttpRequest")
                         .ignoreContentType(true)
                         .maxBodySize(0)
                         .timeout(TIMEOUT).get();
+            } catch (IOException e) {
+                System.out.println("Error downloading board!");
+                e.printStackTrace();
+            }
 
+            if (boardDoc != null) {
                 boardDoc.select("a").remove();
                 JSONObject obj = new JSONObject(boardDoc.body().html().replaceAll("\n", ""));
                 JSONArray arr = obj.getJSONObject("resource_response").getJSONArray("data");
                 bookmarks = obj.getJSONObject("resource").getJSONObject("options").getJSONArray("bookmarks");
                 for (int i = 0; i < arr.length(); i++) {
-                    saveImage(arr.getJSONObject(i).getJSONObject("images").getJSONObject("orig").getString("url"), rootDir + "\\" + boardName, Integer.toString(++count)+"_"+arr.getJSONObject(i).getString("description"));
+                    saveImage(arr.getJSONObject(i).getJSONObject("images").getJSONObject("orig").getString("url"), rootDir + "\\" + boardName, Integer.toString(++count) + "_" + arr.getJSONObject(i).getString("description"));
                 }
-            }
+            } else
+                System.out.println("Board is empty!");
         }
-
-        System.out.println("All pins downloaded, to " + System.getProperty("user.dir")
-                + "\\"  + rootDir + "\\");
-        System.out.println("Thanks for using PinCrawl!");
     }
 
     /**
@@ -171,12 +194,17 @@ public class Main {
      * @param filename name of image
      * @throws IOException
      */
-    public static void saveImage(String srcUrl, String path, String filename) throws IOException {
-        URL url = new URL(srcUrl);
-        ReadableByteChannel rbc = Channels.newChannel(url.openStream());
-        FileOutputStream fos = new FileOutputStream(path + "\\" + cleanFilename(filename) + "." +srcUrl.substring(srcUrl.length()-3));
-        fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-        fos.flush();
-        fos.close();
+    public static void saveImage(String srcUrl, String path, String filename) {
+        try {
+            URL url = new URL(srcUrl);
+            ReadableByteChannel rbc = Channels.newChannel(url.openStream());
+            FileOutputStream fos = new FileOutputStream(path + "\\" + cleanFilename(filename) + "." + srcUrl.substring(srcUrl.length() - 3));
+            fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+            fos.flush();
+            fos.close();
+        } catch (Exception e) {
+            System.out.println("Error saving image: ");
+            e.printStackTrace();
+        }
     }
 }
