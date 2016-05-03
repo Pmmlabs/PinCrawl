@@ -12,8 +12,8 @@ The folder made with the pictures will be in your working directory (the one you
 ## Libraries download
 This repo uses libraries as submodules, so before building sources yourself, run
 ```
-git submodules init
-git submodules update
+git submodule init
+git submodule update
 ```
 
 ## History

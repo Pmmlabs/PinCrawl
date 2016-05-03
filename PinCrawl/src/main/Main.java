@@ -1,21 +1,20 @@
 package main;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Connection;
+import org.jsoup.HttpStatusException;
+import org.jsoup.Jsoup;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Scanner;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.HttpStatusException;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 
 /**
  * A simple app to download any Pinterest user's pins to a local directory.
@@ -32,7 +31,7 @@ public class Main {
      * @param args arguments (needs a string for username or abort)
      */
     public static void main(final String[] args)  {
-        System.out.println("Welcome to PinCrawl, this may take a while...");
+        System.out.println("Welcome to PinCrawl!");
 
         // get username
         if (args.length > 0) {
@@ -66,20 +65,20 @@ public class Main {
      */
     private static void process() throws IOException {
         // validate username and connect to their page
-        Document doc;
+        System.out.println("loading...");
+        Connection.Response doc;
         try {
             doc = Jsoup.connect("https://www.pinterest.com/resource/UserResource/get/")
                     .data("data", "{\"options\":{\"username\":\"" + _username + "\",\"page_size\":250},\"module\":{\"name\":\"UserProfileContent\",\"options\":{\"tab\":\"boards\"}}}")
                     .header("X-Requested-With", "XMLHttpRequest")
                     .ignoreContentType(true)
                     .maxBodySize(0)
-                    .timeout(TIMEOUT).get();
+                    .timeout(TIMEOUT).execute();
         } catch (HttpStatusException e) {
             System.out.println("ERROR: not a valid user name, aborting.");
             return;
         }
-        doc.select("a, div").remove();
-        JSONObject userObj = new JSONObject(doc.body().html().replaceAll("\n", ""));
+        JSONObject userObj = new JSONObject(doc.body());
         JSONArray boardsArr = userObj.getJSONArray("resource_data_cache").getJSONObject(1).getJSONArray("data");
         // reserve path:
         /*JSONArray boardsArr2 = userObj.getJSONObject("module").getJSONObject("tree").getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("children");
@@ -134,22 +133,21 @@ public class Main {
         JSONArray bookmarks = new JSONArray("[\"\"]");
         int count = 0;
         while (!bookmarks.getString(0).equals("-end-")) {
-            Document boardDoc = null;
+            Connection.Response boardDoc = null;
             try {
                 boardDoc = Jsoup.connect("https://www.pinterest.com/resource/BoardFeedResource/get/")
                         .data("data", "{\"options\":{\"board_id\":\"" + boardObj.getString("id") + "\",\"page_size\":250,\"bookmarks\":" + bookmarks.toString() + "}}")
                         .header("X-Requested-With", "XMLHttpRequest")
                         .ignoreContentType(true)
                         .maxBodySize(0)
-                        .timeout(TIMEOUT).get();
+                        .timeout(TIMEOUT).execute();
             } catch (IOException e) {
                 System.out.println("Error downloading board!");
                 e.printStackTrace();
             }
 
             if (boardDoc != null) {
-                boardDoc.select("a").remove();
-                JSONObject obj = new JSONObject(boardDoc.body().html().replaceAll("\n", ""));
+                JSONObject obj = new JSONObject(boardDoc.body());
                 JSONArray arr = obj.getJSONObject("resource_response").getJSONArray("data");
                 bookmarks = obj.getJSONObject("resource").getJSONObject("options").getJSONArray("bookmarks");
                 for (int i = 0; i < arr.length(); i++) {
@@ -192,7 +190,6 @@ public class Main {
      * @param srcUrl url of image
      * @param path path to save image (in root\board)
      * @param filename name of image
-     * @throws IOException
      */
     public static void saveImage(String srcUrl, String path, String filename) {
         try {
