@@ -125,7 +125,8 @@ public class Main {
             System.out.println("ERROR: couldn't find name of board, it's the developer's fault. Aborting.");
             return;
         }
-        if(!makeDir(rootDir + "\\" + cleanFilename(boardName)))
+        boardName = cleanFilename(boardName);
+        if(!makeDir(rootDir + "\\" + boardName))
             return;
 
         System.out.println("Downloading '" + boardName + "'...");
@@ -179,7 +180,7 @@ public class Main {
     }
 
     private static String cleanFilename(String name) {
-        String tmp = name.replaceAll("[<>\\\\:\"/\\|\\?\\*]", "");
+        String tmp = name.replaceAll("[<>\\.\\\\:\"/\\|\\?\\*]", "");
         if (tmp.length() > 100)
             tmp = tmp.substring(0, 100);
         return tmp;
