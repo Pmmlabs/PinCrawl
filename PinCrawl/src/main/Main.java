@@ -79,10 +79,16 @@ public class Main {
             return;
         }
         JSONObject userObj = new JSONObject(doc.body());
-        JSONArray boardsArr = userObj.getJSONArray("resource_data_cache").getJSONObject(1).getJSONArray("data");
-        // reserve path:
-        /*JSONArray boardsArr2 = userObj.getJSONObject("module").getJSONObject("tree").getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("children");
-        JSONArray boardsArr3 = userObj.getJSONObject("module").getJSONObject("tree").getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("data");*/
+        JSONArray boardsArr;
+        try {
+            boardsArr = userObj.getJSONArray("resource_data_cache").getJSONObject(1).getJSONArray("data");
+        }  catch (Exception e) {
+            try {
+                boardsArr = userObj.getJSONObject("module").getJSONObject("tree").getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("children");
+            } catch (Exception e1) {
+                boardsArr = userObj.getJSONObject("module").getJSONObject("tree").getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("data");
+            }
+        }
 
         // make root directory
         rootDir += " for " + _username;
