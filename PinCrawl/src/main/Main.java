@@ -81,12 +81,16 @@ public class Main {
         JSONObject userObj = new JSONObject(doc.body());
         JSONArray boardsArr;
         try {
-            boardsArr = userObj.getJSONArray("resource_data_cache").getJSONObject(1).getJSONArray("data");
+            boardsArr = userObj.getJSONObject("module").getJSONObject("tree").getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("data");
         }  catch (Exception e) {
             try {
-                boardsArr = userObj.getJSONObject("module").getJSONObject("tree").getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("children");
-            } catch (Exception e1) {
-                boardsArr = userObj.getJSONObject("module").getJSONObject("tree").getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("data");
+                boardsArr = userObj.getJSONObject("module").getJSONObject("tree").getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("data");
+            } catch (Exception e2) {
+                try {
+                    boardsArr = userObj.getJSONObject("module").getJSONObject("tree").getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("children");
+                } catch (Exception e1) {
+                    boardsArr = userObj.getJSONArray("resource_data_cache").getJSONObject(1).getJSONArray("data");
+                }
             }
         }
 
@@ -101,7 +105,7 @@ public class Main {
         int i=0;
         for (Object board : boardsArr) {
             JSONObject boardObj = (JSONObject)board;
-            System.out.println(Integer.toString(++i)+". "+boardObj.getString("name"));
+            System.out.println(Integer.toString(++i)+". "+boardObj.getString("name")+" ("+boardObj.getInt("pin_count")+")");
         }
         System.out.println("0. ALL ALBUMS");
         System.out.print("Enter the number of album: ");
