@@ -46,7 +46,7 @@ public class Main {
             }
         }
 
-        _username = _username.trim();
+        _username = cleanFilename(_username.trim());
         if (_username.contains(" ")) {
             System.out.println("ERROR: username contains space character");
             return;
