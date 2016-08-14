@@ -82,14 +82,22 @@ public class Main {
         JSONArray boardsArr;
         try {
             boardsArr = userObj.getJSONObject("module").getJSONObject("tree").getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("data");
-        }  catch (Exception e) {
+        } catch (Exception e) {
             try {
                 boardsArr = userObj.getJSONObject("module").getJSONObject("tree").getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("data");
-            } catch (Exception e2) {
+            } catch (Exception e1) {
                 try {
-                    boardsArr = userObj.getJSONObject("module").getJSONObject("tree").getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("children");
-                } catch (Exception e1) {
-                    boardsArr = userObj.getJSONArray("resource_data_cache").getJSONObject(1).getJSONArray("data");
+                    boardsArr = userObj.getJSONObject("module").getJSONObject("tree").getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("data");
+                } catch (Exception e2) {
+                    try {
+                        boardsArr = userObj.getJSONObject("module").getJSONObject("tree").getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("data");
+                    } catch (Exception e3) {
+                        try {
+                            boardsArr = userObj.getJSONObject("module").getJSONObject("tree").getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("children");
+                        } catch (Exception e4) {
+                            boardsArr = userObj.getJSONArray("resource_data_cache").getJSONObject(1).getJSONArray("data");
+                        }
+                    }
                 }
             }
         }
