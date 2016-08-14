@@ -46,7 +46,7 @@ public class Main {
             }
         }
 
-        _username = _username.trim();
+        _username = cleanFilename(_username.trim());
         if (_username.contains(" ")) {
             System.out.println("ERROR: username contains space character");
             return;
@@ -79,10 +79,20 @@ public class Main {
             return;
         }
         JSONObject userObj = new JSONObject(doc.body());
-        JSONArray boardsArr = userObj.getJSONArray("resource_data_cache").getJSONObject(1).getJSONArray("data");
-        // reserve path:
-        /*JSONArray boardsArr2 = userObj.getJSONObject("module").getJSONObject("tree").getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("children");
-        JSONArray boardsArr3 = userObj.getJSONObject("module").getJSONObject("tree").getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("data");*/
+        JSONArray boardsArr;
+        try {
+            boardsArr = userObj.getJSONObject("module").getJSONObject("tree").getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("data");
+        }  catch (Exception e) {
+            try {
+                boardsArr = userObj.getJSONObject("module").getJSONObject("tree").getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("data");
+            } catch (Exception e2) {
+                try {
+                    boardsArr = userObj.getJSONObject("module").getJSONObject("tree").getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("children");
+                } catch (Exception e1) {
+                    boardsArr = userObj.getJSONArray("resource_data_cache").getJSONObject(1).getJSONArray("data");
+                }
+            }
+        }
 
         // make root directory
         rootDir += " for " + _username;
@@ -95,7 +105,7 @@ public class Main {
         int i=0;
         for (Object board : boardsArr) {
             JSONObject boardObj = (JSONObject)board;
-            System.out.println(Integer.toString(++i)+". "+boardObj.getString("name"));
+            System.out.println(Integer.toString(++i)+". "+boardObj.getString("name")+" ("+boardObj.getInt("pin_count")+")");
         }
         System.out.println("0. ALL ALBUMS");
         System.out.print("Enter the number of album: ");
