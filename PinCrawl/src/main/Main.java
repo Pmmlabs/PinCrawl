@@ -95,7 +95,12 @@ public class Main {
                         try {
                             boardsArr = userObj.getJSONObject("module").getJSONObject("tree").getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("children").getJSONObject(0).getJSONArray("children");
                         } catch (Exception e4) {
-                            boardsArr = userObj.getJSONArray("resource_data_cache").getJSONObject(1).getJSONArray("data");
+                            try {
+                                boardsArr = userObj.getJSONArray("resource_data_cache").getJSONObject(1).getJSONArray("data");
+                            } catch (Exception e5) {
+                                System.out.println("ERROR: Pinterest didn't return boards list. Try again later.");
+                                return;
+                            }
                         }
                     }
                 }
