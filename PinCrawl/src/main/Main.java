@@ -200,7 +200,7 @@ public class Main {
      *
      * @param name name of the file
      */
-    public static boolean makeDir(String name) {
+    private static boolean makeDir(String name) {
         File file = new File(name);
         if (!file.exists()) {
             if (file.mkdir()) {
@@ -227,7 +227,7 @@ public class Main {
      * @param path path to save image (in root\board)
      * @param filename name of image
      */
-    public static void saveImage(String srcUrl, String path, String filename) {
+    private static void saveImage(String srcUrl, String path, String filename) {
         try {
             URL url = new URL(srcUrl);
             ReadableByteChannel rbc = Channels.newChannel(url.openStream());
