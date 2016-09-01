@@ -150,7 +150,7 @@ public class Main {
             }
 
         System.out.println("All pins downloaded, to " + System.getProperty("user.dir")
-                + "\\"  + rootDir + "\\");
+                + File.separator  + rootDir + File.separator);
         System.out.println("Thanks for using PinCrawl!");
     }
 
@@ -161,7 +161,7 @@ public class Main {
             return;
         }
         boardName = cleanFilename(boardName);
-        if(!makeDir(rootDir + "\\" + boardName))
+        if(!makeDir(rootDir + File.separator + boardName))
             return;
 
         System.out.println("Downloading '" + boardName + "'...");
@@ -187,7 +187,7 @@ public class Main {
                 JSONArray arr = obj.getJSONObject("resource_response").getJSONArray("data");
                 bookmarks = obj.getJSONObject("resource").getJSONObject("options").getJSONArray("bookmarks");
                 for (int i = 0; i < arr.length(); i++) {
-                    saveImage(arr.getJSONObject(i).getJSONObject("images").getJSONObject("orig").getString("url"), rootDir + "\\" + boardName, Integer.toString(++count) + "_" + arr.getJSONObject(i).getString("description"));
+                    saveImage(arr.getJSONObject(i).getJSONObject("images").getJSONObject("orig").getString("url"), rootDir + File.separator + boardName, Integer.toString(++count) + "_" + arr.getJSONObject(i).getString("description"));
                 }
             } else
                 System.out.println("Board is empty!");
@@ -231,7 +231,7 @@ public class Main {
         try {
             URL url = new URL(srcUrl);
             ReadableByteChannel rbc = Channels.newChannel(url.openStream());
-            FileOutputStream fos = new FileOutputStream(path + "\\" + cleanFilename(filename) + "." + srcUrl.substring(srcUrl.length() - 3));
+            FileOutputStream fos = new FileOutputStream(path + File.separator + cleanFilename(filename) + "." + srcUrl.substring(srcUrl.length() - 3));
             fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
             fos.flush();
             fos.close();
