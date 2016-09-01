@@ -98,8 +98,20 @@ public class Main {
                             try {
                                 boardsArr = userObj.getJSONArray("resource_data_cache").getJSONObject(1).getJSONArray("data");
                             } catch (Exception e5) {
-                                System.out.println("ERROR: Pinterest didn't return boards list. Try again later.");
-                                return;
+                                System.out.println("Warning: Pinterest didn't return boards list. Trying plan B...");
+                                try {
+                                    doc = Jsoup.connect("https://www.pinterest.com/resource/BoardsResource/get/")
+                                            .data("data", "{\"options\":{\"username\":\"" + _username + "\",\"field_set_key\":\"grid_item\"}}")
+                                            .header("X-Requested-With", "XMLHttpRequest")
+                                            .ignoreContentType(true)
+                                            .maxBodySize(0)
+                                            .timeout(TIMEOUT).execute();
+                                    userObj = new JSONObject(doc.body());
+                                    boardsArr = userObj.getJSONObject("resource_response").getJSONArray("data");
+                                } catch (Exception e6) {
+                                    System.out.println("ERROR: plan B failed. Try again later");
+                                    return;
+                                }
                             }
                         }
                     }
