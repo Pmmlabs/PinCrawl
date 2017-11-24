@@ -215,7 +215,7 @@ public class Main {
     }
 
     private static String cleanFilename(String name) {
-        String tmp = name.replaceAll("[<>\\.\\\\:\"/\\|\\?\\*]", "");
+        String tmp = name.replaceAll("[<>\\.\\\\:\"/\\|\\?\\*]", "").replaceAll("\\s+$", "");
         if (tmp.length() > 100)
             tmp = tmp.substring(0, 100);
         return tmp;
