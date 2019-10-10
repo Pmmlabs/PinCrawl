@@ -187,7 +187,8 @@ public class Main {
                 JSONArray arr = obj.getJSONObject("resource_response").getJSONArray("data");
                 bookmarks = obj.getJSONObject("resource").getJSONObject("options").getJSONArray("bookmarks");
                 for (int i = 0; i < arr.length(); i++) {
-                    saveImage(arr.getJSONObject(i).getJSONObject("images").getJSONObject("orig").getString("url"), rootDir + File.separator + boardName, Integer.toString(++count) + "_" + arr.getJSONObject(i).getString("description"));
+                    if (arr.getJSONObject(i).has("images"))
+                        saveImage(arr.getJSONObject(i).getJSONObject("images").getJSONObject("orig").getString("url"), rootDir + File.separator + boardName, Integer.toString(++count) + "_" + arr.getJSONObject(i).getString("description"));
                 }
             } else
                 System.out.println("Board is empty!");
